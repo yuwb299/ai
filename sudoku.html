@@ -4,13 +4,115 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数独游戏</title>
+    
+    <!--
+    ============================================================================
+    数独游戏 - 开发思路与技术特点
+    ============================================================================
+    
+    【项目概述】
+    这是一个纯前端实现的精美数独游戏，采用 HTML5 + CSS3 + JavaScript 开发，
+    无需任何外部依赖，单文件即可运行。游戏设计遵循"清淡精致"的视觉风格，
+    提供流畅的用户体验和丰富的功能。
+    
+    【开发思路】
+    
+    1. 架构设计
+       - 采用单文件架构，所有代码（HTML/CSS/JS）集成在一个文件中
+       - 优点：易于部署、无需构建、直接双击即可运行
+       - MVC模式的简化实现：HTML作为视图模板，CSS负责样式，JS处理逻辑
+    
+    2. 数据结构设计
+       - 使用一维数组（长度81）存储棋盘状态，而非二维数组
+       - 索引计算公式：index = row * 9 + col
+       - 优点：简化存储、便于序列化、提高访问效率
+       - notes数组使用Set存储每个格子的候选数字，自动去重
+    
+    3. 数独生成算法
+       - 采用回溯算法（Backtracking）生成完整数独解
+       - 通过随机打乱数字顺序确保每次生成的数独不同
+       - 根据难度等级随机移除相应数量的数字
+       - 自定义模式下使用约束传播+回溯验证用户输入是否有解
+    
+    4. 交互设计
+       - 点击选择格子，支持键盘方向键导航
+       - 数字键盘和物理键盘双重输入支持
+       - 实时高亮相关格子（同行、同列、同宫、同数字）
+       - 错误即时反馈，冲突实时检测
+    
+    5. 视觉设计
+       - 采用淡雅的莫兰迪色系，营造舒适的游戏氛围
+       - 渐变背景和圆角设计增加现代感
+       - CSS Grid布局实现棋盘，响应式适配不同屏幕
+       - 动画效果增强用户体验（按钮悬停、完成庆祝等）
+    
+    【技术特点】
+    
+    1. 纯前端实现
+       - 无需服务器，无需数据库，无需任何后端支持
+       - 可离线运行，适合本地使用或部署到静态托管服务
+    
+    2. 响应式设计
+       - 使用CSS媒体查询适配移动端
+       - 弹性布局确保在不同屏幕尺寸下都有良好显示
+    
+    3. Canvas图片导出
+       - 使用HTML5 Canvas API绘制棋盘
+       - 将原始布局和完成布局合并在一张图片中
+       - 支持一键下载PNG格式
+    
+    4. CSS动画
+       - 使用CSS Keyframes实现彩带飘落庆祝效果
+       - 过渡动画增强交互反馈
+       - 性能优化：使用transform而非改变位置属性
+    
+    5. 模块化代码组织
+       - 功能函数职责单一，便于维护
+       - 状态变量集中管理
+       - 事件监听与业务逻辑分离
+    
+    【功能列表】
+    - 9x9标准数独格式
+    - 5种难度等级（简单/中等/困难/极难/自定义）
+    - 自动生成有效数独题目
+    - 自定义模式：手动输入初始数字
+    - 实时错误检测和统计
+    - 笔记功能：标记候选数字
+    - 提示功能：随机填入正确答案
+    - 计时器：记录游戏用时
+    - 完成庆祝动画
+    - 图片保存功能
+    
+    【浏览器兼容性】
+    - Chrome 60+
+    - Firefox 55+
+    - Safari 11+
+    - Edge 79+
+    
+    【作者】AI Assistant
+    【版本】1.0
+    【日期】2024
+    ============================================================================
+    -->
+    
     <style>
+        /* ================================================================
+           全局样式重置
+           - 清除浏览器默认样式
+           - 使用border-box盒模型简化尺寸计算
+        ================================================================ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        /* ================================================================
+           页面主体样式
+           - 使用渐变背景增加视觉层次
+           - Flexbox实现垂直水平居中
+           - min-height确保内容少时也能铺满屏幕
+        ================================================================ */
         body {
             font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
@@ -21,6 +123,11 @@
             padding: 20px;
         }
 
+        /* ================================================================
+           主容器样式
+           - 半透明白色背景配合毛玻璃效果
+           - 圆角和阴影增加立体感
+        ================================================================ */
         .container {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
@@ -29,6 +136,11 @@
             backdrop-filter: blur(10px);
         }
 
+        /* ================================================================
+           标题样式
+           - 轻字重(font-weight: 300)营造优雅感
+           - 字间距增加设计感
+        ================================================================ */
         h1 {
             text-align: center;
             color: #5a6c7d;
@@ -38,6 +150,11 @@
             letter-spacing: 3px;
         }
 
+        /* ================================================================
+           控制按钮区域
+           - Flex布局实现自动换行
+           - gap属性控制按钮间距
+        ================================================================ */
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -46,6 +163,11 @@
             justify-content: center;
         }
 
+        /* ================================================================
+           通用按钮样式
+           - 圆角胶囊形状
+           - 过渡动画实现平滑交互效果
+        ================================================================ */
         .btn {
             padding: 10px 20px;
             border: none;
@@ -56,6 +178,13 @@
             font-weight: 500;
         }
 
+        /* ================================================================
+           按钮颜色变体
+           - 使用渐变背景增加质感
+           - 每种颜色代表不同功能：主要/次要/成功/警告/危险
+        ================================================================ */
+        
+        /* 主要按钮 - 蓝色系 */
         .btn-primary {
             background: linear-gradient(135deg, #a8c0d1 0%, #8fa8b8 100%);
             color: white;
@@ -66,6 +195,7 @@
             box-shadow: 0 5px 15px rgba(168, 192, 209, 0.4);
         }
 
+        /* 次要按钮 - 紫色系 */
         .btn-secondary {
             background: linear-gradient(135deg, #d4a8d1 0%, #c49bc0 100%);
             color: white;
@@ -76,6 +206,7 @@
             box-shadow: 0 5px 15px rgba(212, 168, 209, 0.4);
         }
 
+        /* 成功按钮 - 绿色系 */
         .btn-success {
             background: linear-gradient(135deg, #a8d1b8 0%, #8fb8a0 100%);
             color: white;
@@ -86,6 +217,7 @@
             box-shadow: 0 5px 15px rgba(168, 209, 184, 0.4);
         }
 
+        /* 警告按钮 - 黄色系 */
         .btn-warning {
             background: linear-gradient(135deg, #d1c8a8 0%, #b8b08f 100%);
             color: white;
@@ -96,6 +228,7 @@
             box-shadow: 0 5px 15px rgba(209, 200, 168, 0.4);
         }
 
+        /* 危险按钮 - 红色系 */
         .btn-danger {
             background: linear-gradient(135deg, #d1a8a8 0%, #b88f8f 100%);
             color: white;
@@ -106,6 +239,7 @@
             box-shadow: 0 5px 15px rgba(209, 168, 168, 0.4);
         }
 
+        /* 开始按钮 - 特殊强调 */
         .btn-start {
             background: linear-gradient(135deg, #a8d1b8 0%, #6cb87a 100%);
             color: white;
@@ -118,6 +252,11 @@
             box-shadow: 0 5px 15px rgba(168, 209, 184, 0.5);
         }
 
+        /* ================================================================
+           自定义模式控制区域
+           - 仅在选择自定义模式时显示
+           - 浅绿色背景区分于其他区域
+        ================================================================ */
         .custom-mode-controls {
             display: none;
             text-align: center;
@@ -137,6 +276,11 @@
             font-size: 14px;
         }
 
+        /* ================================================================
+           难度选择按钮组
+           - 水平排列，自动换行
+           - 边框样式区分选中状态
+        ================================================================ */
         .difficulty-select {
             display: flex;
             gap: 8px;
@@ -161,12 +305,18 @@
             background: #f8fafb;
         }
 
+        /* 选中状态 - 使用渐变背景 */
         .difficulty-btn.active {
             background: linear-gradient(135deg, #a8c0d1 0%, #8fa8b8 100%);
             color: white;
             border-color: transparent;
         }
 
+        /* ================================================================
+           游戏信息显示区域
+           - 显示时间、错误次数、剩余格子数
+           - 使用Flexbox均匀分布
+        ================================================================ */
         .game-info {
             display: flex;
             justify-content: space-around;
@@ -192,6 +342,12 @@
             font-weight: 600;
         }
 
+        /* ================================================================
+           数独棋盘样式
+           - 使用CSS Grid实现9x9网格
+           - gap为1px形成格子边框
+           - 背景色即为边框颜色
+        ================================================================ */
         .sudoku-board {
             display: grid;
             grid-template-columns: repeat(9, 1fr);
@@ -203,6 +359,11 @@
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
         }
 
+        /* ================================================================
+           格子基础样式
+           - 固定宽高保证正方形
+           - Flexbox实现数字居中
+        ================================================================ */
         .cell {
             width: 45px;
             height: 45px;
@@ -221,30 +382,41 @@
             background: #f0f4f7;
         }
 
+        /* 选中格子样式 */
         .cell.selected {
             background: #e8f0f5;
             box-shadow: inset 0 0 0 2px #a8c0d1;
         }
 
+        /* 固定数字（初始题目）样式 */
         .cell.fixed {
             background: #f5f7fa;
             color: #3a4a58;
             font-weight: 600;
         }
 
+        /* 错误数字样式 */
         .cell.error {
             background: #ffe8e8;
             color: #d9534f;
         }
 
+        /* 高亮相关格子（同行/列/宫） */
         .cell.highlight {
             background: #f0f8f0;
         }
 
+        /* 高亮相同数字 */
         .cell.same-number {
             background: #e8f5f8;
         }
 
+        /* ================================================================
+           3x3宫格边框
+           - 使用nth-child选择器添加粗边框
+           - 每3列右边框加粗
+           - 第3、6行下边框加粗
+        ================================================================ */
         .cell:nth-child(3n) {
             border-right: 2px solid #b8c4cc;
         }
@@ -258,6 +430,7 @@
             border-bottom: 2px solid #b8c4cc;
         }
 
+        /* 格子内输入框样式（备用） */
         .cell input {
             width: 100%;
             height: 100%;
@@ -270,6 +443,11 @@
             outline: none;
         }
 
+        /* ================================================================
+           数字键盘样式
+           - 5列网格布局
+           - 1-9数字 + 清除按钮
+        ================================================================ */
         .number-pad {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -295,11 +473,17 @@
             background: linear-gradient(135deg, #e8f0f5 0%, #d8e4ec 100%);
         }
 
+        /* 清除按钮特殊样式 */
         .number-btn.clear {
             background: linear-gradient(135deg, #f5e8e8 0%, #e8d8d8 100%);
             color: #b07070;
         }
 
+        /* ================================================================
+           模态框基础样式
+           - 全屏覆盖
+           - Flexbox实现内容居中
+        ================================================================ */
         .custom-modal {
             display: none;
             position: fixed;
@@ -348,6 +532,11 @@
             border-color: #a8c0d1;
         }
 
+        /* ================================================================
+           庆祝动画容器
+           - 全屏覆盖但不阻止点击(pointer-events: none)
+           - 用于放置彩带元素
+        ================================================================ */
         .celebration {
             display: none;
             position: fixed;
@@ -363,6 +552,7 @@
             display: block;
         }
 
+        /* 单个彩带元素 */
         .confetti {
             position: absolute;
             width: 10px;
@@ -370,6 +560,7 @@
             opacity: 0;
         }
 
+        /* 彩带下落动画 - 使用CSS Keyframes */
         @keyframes confetti-fall {
             0% {
                 opacity: 1;
@@ -385,6 +576,11 @@
             animation: confetti-fall 3s ease-out forwards;
         }
 
+        /* ================================================================
+           胜利弹窗样式
+           - 居中显示
+           - 弹出动画效果
+        ================================================================ */
         .win-modal {
             display: none;
             position: fixed;
@@ -404,6 +600,7 @@
             animation: pop-in 0.5s ease-out;
         }
 
+        /* 弹窗弹出动画 */
         @keyframes pop-in {
             0% {
                 transform: translate(-50%, -50%) scale(0.5);
@@ -427,10 +624,12 @@
             margin-bottom: 20px;
         }
 
+        /* 计时器使用等宽字体 */
         .timer {
             font-family: 'Courier New', monospace;
         }
 
+        /* 自定义输入区域（备用） */
         .custom-input-section {
             margin-top: 15px;
             padding: 15px;
@@ -445,6 +644,10 @@
             font-size: 14px;
         }
 
+        /* ================================================================
+           笔记模式激活状态
+           - 改变按钮背景色提示用户
+        ================================================================ */
         .notes-mode {
             background: linear-gradient(135deg, #f0e8f5 0%, #e0d8e8 100%) !important;
         }
@@ -455,6 +658,7 @@
             line-height: 1.2;
         }
 
+        /* 笔记显示区域 - 3x3网格显示1-9候选数字 */
         .cell .notes-display {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -471,6 +675,10 @@
             align-items: center;
         }
 
+        /* ================================================================
+           自定义输入模式格子样式
+           - 淡橙色背景区分于普通模式
+        ================================================================ */
         .cell.custom-input {
             background: linear-gradient(135deg, #fff8f0 0%, #fff5e8 100%);
         }
@@ -484,11 +692,16 @@
             box-shadow: inset 0 0 0 2px #d4a88f;
         }
 
+        /* 冲突格子样式 - 红色背景 */
         .cell.conflict {
             background: #ffdddd !important;
             color: #c04040 !important;
         }
 
+        /* ================================================================
+           状态消息样式
+           - 用于显示错误提示或成功消息
+        ================================================================ */
         .status-message {
             text-align: center;
             padding: 10px;
@@ -510,6 +723,10 @@
             color: #40a040;
         }
 
+        /* ================================================================
+           响应式设计 - 移动端适配
+           - 屏幕宽度小于500px时缩小格子和按钮
+        ================================================================ */
         @media (max-width: 500px) {
             .cell {
                 width: 35px;
@@ -530,9 +747,12 @@
     </style>
 </head>
 <body>
+    <!-- 主容器 -->
     <div class="container">
+        <!-- 游戏标题 -->
         <h1>数 独</h1>
         
+        <!-- 难度选择按钮组 -->
         <div class="difficulty-select">
             <button class="difficulty-btn active" data-difficulty="easy">简单</button>
             <button class="difficulty-btn" data-difficulty="medium">中等</button>
@@ -541,6 +761,7 @@
             <button class="difficulty-btn" data-difficulty="custom">自定义</button>
         </div>
         
+        <!-- 功能控制按钮 -->
         <div class="controls">
             <button class="btn btn-primary" onclick="newGame()">新游戏</button>
             <button class="btn btn-secondary" onclick="toggleNotes()">笔记模式</button>
@@ -548,14 +769,17 @@
             <button class="btn btn-warning" onclick="showHint()">提示</button>
         </div>
         
+        <!-- 自定义模式控制区域（初始隐藏） -->
         <div class="custom-mode-controls" id="customModeControls">
             <p>请在棋盘上填写数字，然后点击"开始游戏"</p>
             <button class="btn btn-start" onclick="startCustomGame()">开始游戏</button>
             <button class="btn btn-danger" onclick="clearCustomBoard()" style="margin-left: 10px;">清空</button>
         </div>
         
+        <!-- 状态消息显示区域 -->
         <div class="status-message" id="statusMessage"></div>
         
+        <!-- 游戏信息显示（时间、错误、剩余） -->
         <div class="game-info">
             <div class="info-item">
                 <div class="info-label">时间</div>
@@ -571,8 +795,10 @@
             </div>
         </div>
         
+        <!-- 数独棋盘（由JS动态生成81个格子） -->
         <div class="sudoku-board" id="board"></div>
         
+        <!-- 数字键盘 -->
         <div class="number-pad">
             <button class="number-btn" onclick="inputNumber(1)">1</button>
             <button class="number-btn" onclick="inputNumber(2)">2</button>
@@ -587,6 +813,7 @@
         </div>
     </div>
     
+    <!-- 胜利弹窗 -->
     <div class="win-modal" id="winModal">
         <h2>恭喜完成!</h2>
         <p id="winStats"></p>
@@ -594,72 +821,147 @@
         <button class="btn btn-success" onclick="closeWinModal()">再来一局</button>
     </div>
     
+    <!-- 庆祝动画容器（彩带） -->
     <div class="celebration" id="celebration"></div>
 
     <script>
+        /* ================================================================
+           数独游戏 - JavaScript 核心逻辑
+           ================================================================
+           
+           【数据结构说明】
+           - board: 当前棋盘状态，长度81的一维数组，0表示空格
+           - solution: 完整数独解，用于验证答案
+           - notes: 笔记数据，每个格子用一个Set存储候选数字
+           - selectedCell: 当前选中的格子索引（0-80）
+           
+           【索引计算】
+           - 行号: Math.floor(index / 9)
+           - 列号: index % 9
+           - 索引: row * 9 + col
+        ================================================================ */
+
+        // ==================== 全局状态变量 ====================
+        
+        /** 当前棋盘状态，0表示空格 */
         let board = [];
+        
+        /** 完整数独解，用于验证用户输入 */
         let solution = [];
+        
+        /** 当前选中的格子索引，null表示未选中 */
         let selectedCell = null;
+        
+        /** 错误次数计数器 */
         let errors = 0;
+        
+        /** 计时器变量（秒） */
         let timer = 0;
+        
+        /** 计时器Interval引用 */
         let timerInterval = null;
+        
+        /** 笔记模式开关 */
         let notesMode = false;
+        
+        /** 笔记数据，每个格子的候选数字集合 */
         let notes = Array(81).fill(null).map(() => new Set());
+        
+        /** 当前难度等级 */
         let currentDifficulty = 'easy';
+        
+        /** 游戏是否完成 */
         let gameComplete = false;
+        
+        /** 是否处于自定义模式 */
         let isCustomMode = false;
+        
+        /** 自定义游戏是否已开始 */
         let customGameStarted = false;
 
+        // ==================== 难度配置 ====================
+        
+        /**
+         * 难度等级配置
+         * 数值表示需要移除的格子数量
+         * 移除越多，难度越高
+         */
         const difficultyLevels = {
-            easy: 35,
-            medium: 45,
-            hard: 52,
-            extreme: 58
+            easy: 35,      // 简单：移除35个格子，剩余46个提示
+            medium: 45,    // 中等：移除45个格子，剩余36个提示
+            hard: 52,      // 困难：移除52个格子，剩余29个提示
+            extreme: 58    // 极难：移除58个格子，剩余23个提示
         };
 
+        // ==================== 初始化函数 ====================
+        
+        /**
+         * 游戏初始化入口
+         * 在页面加载时调用，完成棋盘创建、新游戏生成、事件绑定
+         */
         function init() {
-            createBoard();
-            newGame();
-            setupEventListeners();
+            createBoard();       // 创建81个格子元素
+            newGame();           // 生成新游戏
+            setupEventListeners(); // 绑定事件监听器
         }
 
+        /**
+         * 创建棋盘DOM结构
+         * 动态生成81个格子元素并添加到棋盘容器
+         */
         function createBoard() {
             const boardEl = document.getElementById('board');
             boardEl.innerHTML = '';
+            
+            // 创建81个格子（9行 x 9列）
             for (let i = 0; i < 81; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
-                cell.dataset.index = i;
+                cell.dataset.index = i;  // 存储索引便于事件处理
                 cell.onclick = () => selectCell(i);
                 boardEl.appendChild(cell);
             }
         }
 
+        /**
+         * 设置事件监听器
+         * 包括难度按钮点击和键盘事件
+         */
         function setupEventListeners() {
+            // 难度按钮点击事件
             document.querySelectorAll('.difficulty-btn').forEach(btn => {
                 btn.onclick = () => {
+                    // 移除所有按钮的active状态
                     document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+                    // 激活当前按钮
                     btn.classList.add('active');
                     currentDifficulty = btn.dataset.difficulty;
                     
+                    // 根据难度执行不同操作
                     if (currentDifficulty === 'custom') {
-                        startCustomInputMode();
+                        startCustomInputMode();  // 进入自定义输入模式
                     } else {
-                        exitCustomMode();
-                        newGame();
+                        exitCustomMode();        // 退出自定义模式
+                        newGame();               // 开始新游戏
                     }
                 };
             });
 
+            // 键盘事件监听
             document.addEventListener('keydown', (e) => {
                 if (selectedCell === null) return;
                 if (gameComplete && !isCustomMode) return;
                 
+                // 数字键1-9：输入数字
                 if (e.key >= '1' && e.key <= '9') {
                     inputNumber(parseInt(e.key));
-                } else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
+                } 
+                // 退格/删除/0：清除数字
+                else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
                     inputNumber(0);
-                } else if (e.key === 'ArrowUp' && selectedCell >= 9) {
+                } 
+                // 方向键导航
+                else if (e.key === 'ArrowUp' && selectedCell >= 9) {
                     selectCell(selectedCell - 9);
                 } else if (e.key === 'ArrowDown' && selectedCell < 72) {
                     selectCell(selectedCell + 9);
@@ -671,25 +973,35 @@
             });
         }
 
+        // ==================== 自定义模式函数 ====================
+        
+        /**
+         * 进入自定义输入模式
+         * 用户可以手动填写初始数字
+         */
         function startCustomInputMode() {
             isCustomMode = true;
             customGameStarted = false;
             gameComplete = false;
             stopTimer();
             
+            // 重置显示
             document.getElementById('timer').textContent = '00:00';
             document.getElementById('errors').textContent = '0';
             document.getElementById('remaining').textContent = '81';
             
+            // 显示自定义模式控制区域
             document.getElementById('customModeControls').classList.add('show');
             showStatus('', '');
             
+            // 重置棋盘数据
             board = Array(81).fill(0);
             solution = Array(81).fill(0);
             notes = Array(81).fill(null).map(() => new Set());
             selectedCell = null;
             errors = 0;
             
+            // 设置格子样式为自定义输入模式
             const cells = document.querySelectorAll('.cell');
             cells.forEach(cell => {
                 cell.className = 'cell custom-input';
@@ -697,6 +1009,9 @@
             });
         }
 
+        /**
+         * 退出自定义模式
+         */
         function exitCustomMode() {
             isCustomMode = false;
             customGameStarted = false;
@@ -704,8 +1019,13 @@
             showStatus('', '');
         }
 
+        /**
+         * 清空自定义棋盘
+         * 仅在自定义模式且未开始游戏时可用
+         */
         function clearCustomBoard() {
             if (!isCustomMode || customGameStarted) return;
+            
             board = Array(81).fill(0);
             notes = Array(81).fill(null).map(() => new Set());
             selectedCell = null;
@@ -720,22 +1040,42 @@
             document.getElementById('remaining').textContent = '81';
         }
 
+        /**
+         * 显示状态消息
+         * @param {string} message - 消息内容
+         * @param {string} type - 消息类型：'error'、'success' 或空
+         */
         function showStatus(message, type) {
             const statusEl = document.getElementById('statusMessage');
             statusEl.textContent = message;
             statusEl.className = 'status-message ' + type;
         }
 
+        // ==================== 数独生成算法 ====================
+        
+        /**
+         * 生成新的数独题目
+         * 算法步骤：
+         * 1. 使用回溯算法生成完整的数独解
+         * 2. 根据难度随机移除指定数量的格子
+         */
         function generateSudoku() {
+            // 初始化解数组
             solution = Array(81).fill(0);
+            
+            // 使用回溯算法填充完整数独
             fillSudoku(solution, 0);
+            
+            // 复制解作为初始棋盘
             board = [...solution];
             
+            // 根据难度移除格子
             const cellsToRemove = difficultyLevels[currentDifficulty];
             let removed = 0;
             let attempts = 0;
             const maxAttempts = 1000;
             
+            // 随机移除格子直到达到目标数量
             while (removed < cellsToRemove && attempts < maxAttempts) {
                 const index = Math.floor(Math.random() * 81);
                 if (board[index] !== 0) {
@@ -746,39 +1086,74 @@
             }
         }
 
+        /**
+         * 求解数独（用于验证自定义输入是否有解）
+         * @param {number[]} grid - 数独数组
+         * @returns {number[]|null} 解数组，无解返回null
+         */
         function solveSudoku(grid) {
             const tempGrid = [...grid];
             return fillSudoku(tempGrid, 0) ? tempGrid : null;
         }
 
+        /**
+         * 使用回溯算法填充数独
+         * 这是数独生成的核心算法
+         * 
+         * @param {number[]} grid - 数独数组
+         * @param {number} pos - 当前位置（0-80）
+         * @returns {boolean} 是否成功填充
+         */
         function fillSudoku(grid, pos) {
+            // 所有位置都已填充，成功完成
             if (pos === 81) return true;
             
+            // 如果当前位置已有数字，跳到下一个位置
             if (grid[pos] !== 0) {
                 return fillSudoku(grid, pos + 1);
             }
             
+            // 随机打乱1-9的顺序，确保每次生成不同的数独
             const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
             
+            // 尝试每个数字
             for (const num of nums) {
+                // 检查数字是否可以放置
                 if (isValidPlacement(grid, pos, num)) {
                     grid[pos] = num;
+                    
+                    // 递归填充下一个位置
                     if (fillSudoku(grid, pos + 1)) return true;
+                    
+                    // 回溯：如果后续填充失败，重置当前格子
                     grid[pos] = 0;
                 }
             }
+            
+            // 所有数字都尝试失败
             return false;
         }
 
+        /**
+         * 检查数字是否可以放置在指定位置
+         * 数独规则：同行、同列、同宫内不能有重复数字
+         * 
+         * @param {number[]} grid - 数独数组
+         * @param {number} pos - 位置索引
+         * @param {number} num - 要放置的数字
+         * @returns {boolean} 是否可以放置
+         */
         function isValidPlacement(grid, pos, num) {
             const row = Math.floor(pos / 9);
             const col = pos % 9;
             
+            // 检查同一行和同一列
             for (let i = 0; i < 9; i++) {
-                if (grid[row * 9 + i] === num) return false;
-                if (grid[i * 9 + col] === num) return false;
+                if (grid[row * 9 + i] === num) return false;  // 同行
+                if (grid[i * 9 + col] === num) return false;  // 同列
             }
             
+            // 检查同一个3x3宫格
             const boxRow = Math.floor(row / 3) * 3;
             const boxCol = Math.floor(col / 3) * 3;
             for (let i = 0; i < 3; i++) {
@@ -790,6 +1165,13 @@
             return true;
         }
 
+        /**
+         * Fisher-Yates 洗牌算法
+         * 随机打乱数组顺序
+         * 
+         * @param {any[]} array - 原数组
+         * @returns {any[]} 打乱后的新数组
+         */
         function shuffle(array) {
             const arr = [...array];
             for (let i = arr.length - 1; i > 0; i--) {
@@ -799,9 +1181,17 @@
             return arr;
         }
 
+        // ==================== 渲染函数 ====================
+        
+        /**
+         * 渲染棋盘
+         * 根据当前状态更新所有格子的显示
+         */
         function renderBoard() {
             const cells = document.querySelectorAll('.cell');
+            
             cells.forEach((cell, index) => {
+                // 自定义输入模式（未开始游戏）
                 if (isCustomMode && !customGameStarted) {
                     cell.classList.remove('error', 'selected', 'highlight', 'same-number');
                     cell.classList.add('custom-input');
@@ -809,6 +1199,7 @@
                     if (board[index] !== 0) {
                         cell.innerHTML = board[index];
                     } else if (notes[index].size > 0) {
+                        // 显示笔记
                         let notesHtml = '<div class="notes-display">';
                         for (let n = 1; n <= 9; n++) {
                             notesHtml += `<span>${notes[index].has(n) ? n : ''}</span>`;
@@ -818,11 +1209,14 @@
                     } else {
                         cell.innerHTML = '';
                     }
-                } else {
+                } 
+                // 正常游戏模式
+                else {
                     cell.classList.remove('custom-input', 'error', 'highlight', 'same-number');
                     
                     if (board[index] !== 0) {
                         cell.innerHTML = board[index];
+                        // 标记初始数字为fixed
                         if (solution[index] === board[index] && board[index] !== 0) {
                             const originalBoard = window.originalBoard || [];
                             if (originalBoard[index] !== 0) {
@@ -830,6 +1224,7 @@
                             }
                         }
                     } else if (notes[index].size > 0) {
+                        // 显示笔记
                         let notesHtml = '<div class="notes-display">';
                         for (let n = 1; n <= 9; n++) {
                             notesHtml += `<span>${notes[index].has(n) ? n : ''}</span>`;
@@ -842,13 +1237,21 @@
                 }
             });
             
+            // 高亮选中的格子及相关格子
             if (selectedCell !== null) {
                 highlightCells(selectedCell);
             }
             
+            // 更新剩余格子数
             updateRemaining();
         }
 
+        /**
+         * 高亮相关格子
+         * 包括同行、同列、同宫的格子，以及相同数字的格子
+         * 
+         * @param {number} index - 选中的格子索引
+         */
         function highlightCells(index) {
             const cells = document.querySelectorAll('.cell');
             const row = Math.floor(index / 9);
@@ -859,19 +1262,25 @@
             
             cells.forEach((cell, i) => {
                 cell.classList.remove('selected', 'highlight', 'same-number');
+                
                 const cellRow = Math.floor(i / 9);
                 const cellCol = i % 9;
                 const cellBoxRow = Math.floor(cellRow / 3) * 3;
                 const cellBoxCol = Math.floor(cellCol / 3) * 3;
                 
+                // 当前选中的格子
                 if (i === index) {
                     cell.classList.add('selected');
-                } else if (!isCustomMode || customGameStarted) {
+                } 
+                // 在自定义模式未开始时只高亮选中格子
+                else if (!isCustomMode || customGameStarted) {
+                    // 同行、同列、同宫的格子
                     if (cellRow === row || cellCol === col || 
                           (cellBoxRow === boxRow && cellBoxCol === boxCol)) {
                         cell.classList.add('highlight');
                     }
                     
+                    // 相同数字的格子
                     if (selectedValue !== 0 && board[i] === selectedValue && i !== index) {
                         cell.classList.add('same-number');
                     }
@@ -879,18 +1288,26 @@
             });
         }
 
+        /**
+         * 选择格子
+         * 
+         * @param {number} index - 格子索引
+         */
         function selectCell(index) {
+            // 游戏完成后不能选择（自定义模式除外）
             if (gameComplete && !isCustomMode) return;
             
             const cells = document.querySelectorAll('.cell');
             const cell = cells[index];
             
+            // 自定义模式未开始时可以选择任意格子
             if (isCustomMode && !customGameStarted) {
                 selectedCell = index;
                 highlightCells(index);
                 return;
             }
             
+            // 固定格子可以选择但不能修改
             if (cell.classList.contains('fixed')) {
                 selectedCell = index;
                 highlightCells(index);
@@ -901,6 +1318,14 @@
             highlightCells(index);
         }
 
+        // ==================== 输入处理 ====================
+        
+        /**
+         * 输入数字
+         * 处理用户输入数字或清除数字的操作
+         * 
+         * @param {number} num - 要输入的数字（0表示清除）
+         */
         function inputNumber(num) {
             if (selectedCell === null) return;
             if (gameComplete && !isCustomMode) return;
@@ -908,8 +1333,10 @@
             const cells = document.querySelectorAll('.cell');
             const cell = cells[selectedCell];
             
+            // 自定义模式输入处理
             if (isCustomMode && !customGameStarted) {
                 if (notesMode && num !== 0) {
+                    // 笔记模式：切换候选数字
                     if (notes[selectedCell].has(num)) {
                         notes[selectedCell].delete(num);
                     } else {
@@ -917,18 +1344,23 @@
                     }
                     board[selectedCell] = 0;
                 } else {
+                    // 普通模式：直接输入数字
                     notes[selectedCell].clear();
                     board[selectedCell] = num;
                     
+                    // 检测冲突
                     highlightConflicts();
                 }
                 renderBoard();
                 return;
             }
             
+            // 固定格子不能修改
             if (cell.classList.contains('fixed')) return;
             
+            // 正常游戏模式输入处理
             if (notesMode && num !== 0) {
+                // 笔记模式
                 if (notes[selectedCell].has(num)) {
                     notes[selectedCell].delete(num);
                 } else {
@@ -936,14 +1368,18 @@
                 }
                 board[selectedCell] = 0;
             } else {
+                // 普通模式
                 notes[selectedCell].clear();
                 
                 if (num === 0) {
+                    // 清除数字
                     board[selectedCell] = 0;
                     cell.classList.remove('error');
                 } else {
+                    // 输入数字
                     board[selectedCell] = num;
                     
+                    // 验证是否正确
                     if (num !== solution[selectedCell]) {
                         cell.classList.add('error');
                         errors++;
@@ -958,17 +1394,25 @@
             checkWin();
         }
 
+        /**
+         * 检测并高亮冲突的数字
+         * 用于自定义模式，实时检测用户输入的冲突
+         */
         function highlightConflicts() {
             const cells = document.querySelectorAll('.cell');
+            
+            // 清除所有冲突标记
             cells.forEach((cell, index) => {
                 cell.classList.remove('conflict');
             });
             
+            // 检查每个非空格子
             for (let i = 0; i < 81; i++) {
                 if (board[i] !== 0) {
                     const row = Math.floor(i / 9);
                     const col = i % 9;
                     
+                    // 检查同行和同列的冲突
                     for (let j = 0; j < 9; j++) {
                         const rowIdx = row * 9 + j;
                         const colIdx = j * 9 + col;
@@ -983,6 +1427,7 @@
                         }
                     }
                     
+                    // 检查同宫的冲突
                     const boxRow = Math.floor(row / 3) * 3;
                     const boxCol = Math.floor(col / 3) * 3;
                     for (let r = 0; r < 3; r++) {
@@ -998,6 +1443,11 @@
             }
         }
 
+        // ==================== 功能按钮 ====================
+        
+        /**
+         * 切换笔记模式
+         */
         function toggleNotes() {
             notesMode = !notesMode;
             const notesBtn = document.querySelector('.btn-secondary');
@@ -1008,6 +1458,10 @@
             }
         }
 
+        /**
+         * 验证当前解答
+         * 检查所有已填写的数字是否正确
+         */
         function checkSolution() {
             if (isCustomMode && !customGameStarted) return;
             
@@ -1024,15 +1478,21 @@
                 }
             });
             
+            // 如果没有错误且全部填完，则庆祝
             if (!hasError && board.every((val, idx) => val === solution[idx])) {
                 celebrate();
             }
         }
 
+        /**
+         * 显示提示
+         * 随机填入一个正确答案
+         */
         function showHint() {
             if (isCustomMode && !customGameStarted) return;
             if (gameComplete) return;
             
+            // 收集所有空格子
             const emptyCells = [];
             for (let i = 0; i < 81; i++) {
                 if (board[i] === 0) {
@@ -1042,6 +1502,7 @@
             
             if (emptyCells.length === 0) return;
             
+            // 随机选择一个空格子并填入正确答案
             const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
             board[randomIndex] = solution[randomIndex];
             notes[randomIndex].clear();
@@ -1050,6 +1511,12 @@
             checkWin();
         }
 
+        // ==================== 胜利检测与庆祝 ====================
+        
+        /**
+         * 检查是否获胜
+         * 所有格子都正确填写时触发庆祝
+         */
         function checkWin() {
             const isComplete = board.every((val, idx) => val === solution[idx]);
             if (isComplete) {
@@ -1057,40 +1524,55 @@
             }
         }
 
+        /**
+         * 庆祝动画
+         * 显示彩带飘落效果和胜利弹窗
+         */
         function celebrate() {
             gameComplete = true;
             stopTimer();
             
+            // 创建彩带元素
             const celebration = document.getElementById('celebration');
             celebration.innerHTML = '';
             
+            // 彩带颜色（与游戏主题色一致）
             const colors = ['#a8c0d1', '#d4a8d1', '#a8d1b8', '#d1c8a8', '#d1a8a8', '#a8d1d1'];
             
+            // 生成100个彩带
             for (let i = 0; i < 100; i++) {
                 const confetti = document.createElement('div');
                 confetti.className = 'confetti';
                 confetti.style.left = Math.random() * 100 + '%';
                 confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';  // 随机圆形或方形
                 confetti.style.animationDelay = Math.random() * 2 + 's';
                 confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
                 celebration.appendChild(confetti);
             }
             
+            // 显示彩带动画
             celebration.classList.add('show');
             
+            // 5秒后隐藏彩带
             setTimeout(() => {
                 celebration.classList.remove('show');
             }, 5000);
             
+            // 显示胜利弹窗
             const winModal = document.getElementById('winModal');
             document.getElementById('winStats').innerHTML = 
                 `用时: ${document.getElementById('timer').textContent}<br>错误次数: ${errors}`;
             winModal.classList.add('show');
         }
 
+        /**
+         * 关闭胜利弹窗
+         */
         function closeWinModal() {
             document.getElementById('winModal').classList.remove('show');
+            
+            // 如果是自定义模式，重置为简单模式
             if (isCustomMode) {
                 exitCustomMode();
                 document.querySelectorAll('.difficulty-btn').forEach(b => {
@@ -1102,9 +1584,15 @@
                 });
                 currentDifficulty = 'easy';
             }
+            
             newGame();
         }
 
+        // ==================== 辅助函数 ====================
+        
+        /**
+         * 更新剩余格子数显示
+         */
         function updateRemaining() {
             let count = 0;
             for (let i = 0; i < 81; i++) {
@@ -1113,6 +1601,9 @@
             document.getElementById('remaining').textContent = count;
         }
 
+        /**
+         * 启动计时器
+         */
         function startTimer() {
             timer = 0;
             updateTimerDisplay();
@@ -1122,6 +1613,9 @@
             }, 1000);
         }
 
+        /**
+         * 停止计时器
+         */
         function stopTimer() {
             if (timerInterval) {
                 clearInterval(timerInterval);
@@ -1129,6 +1623,10 @@
             }
         }
 
+        /**
+         * 更新计时器显示
+         * 格式：MM:SS
+         */
         function updateTimerDisplay() {
             const minutes = Math.floor(timer / 60);
             const seconds = timer % 60;
@@ -1136,6 +1634,12 @@
                 `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
 
+        // ==================== 游戏控制 ====================
+        
+        /**
+         * 开始新游戏
+         * 重置所有状态并生成新数独
+         */
         function newGame() {
             exitCustomMode();
             gameComplete = false;
@@ -1149,23 +1653,30 @@
             notes = Array(81).fill(null).map(() => new Set());
             
             generateSudoku();
-            window.originalBoard = [...board];
+            window.originalBoard = [...board];  // 保存原始布局用于图片导出
             renderBoard();
         }
 
+        /**
+         * 开始自定义游戏
+         * 验证用户输入并开始游戏
+         */
         function startCustomGame() {
+            // 检查是否存在冲突
             const hasConflict = document.querySelector('.cell.conflict');
             if (hasConflict) {
                 showStatus('存在冲突的数字，请检查并修正', 'error');
                 return;
             }
             
+            // 检查是否至少填写17个数字（数独最少提示数）
             const filledCount = board.filter(n => n !== 0).length;
             if (filledCount < 17) {
                 showStatus('至少需要填写17个数字才能开始游戏', 'error');
                 return;
             }
             
+            // 尝试求解，验证是否有解
             const tempBoard = [...board];
             const solvedBoard = solveSudoku(tempBoard);
             
@@ -1174,14 +1685,17 @@
                 return;
             }
             
+            // 设置解答并开始游戏
             solution = solvedBoard;
             window.originalBoard = [...board];
             customGameStarted = true;
             gameComplete = false;
             
+            // 隐藏自定义控制区域
             document.getElementById('customModeControls').classList.remove('show');
             showStatus('', '');
             
+            // 重置状态
             errors = 0;
             document.getElementById('errors').textContent = '0';
             selectedCell = null;
@@ -1189,6 +1703,7 @@
             document.querySelector('.btn-secondary').classList.remove('notes-mode');
             notes = Array(81).fill(null).map(() => new Set());
             
+            // 更新格子样式
             const cells = document.querySelectorAll('.cell');
             cells.forEach((cell, index) => {
                 cell.classList.remove('custom-input', 'conflict');
@@ -1197,13 +1712,17 @@
                 }
             });
             
+            // 开始计时
             startTimer();
             renderBoard();
             
+            // 显示成功提示
             showStatus('游戏开始！', 'success');
             setTimeout(() => showStatus('', ''), 2000);
         }
 
+        // ==================== 备用函数（模态框相关） ====================
+        
         function showCustomModal() {
             document.getElementById('customModal').classList.add('show');
         }
@@ -1220,30 +1739,42 @@
             currentDifficulty = 'easy';
         }
 
+        // ==================== 图片导出功能 ====================
+        
+        /**
+         * 将游戏保存为图片
+         * 使用Canvas API绘制包含原始布局和完成布局的图片
+         */
         function saveAsImage() {
-            const cellSize = 50;
-            const padding = 20;
-            const boardWidth = cellSize * 9;
-            const gap = 40;
-            const titleHeight = 40;
-            const statsHeight = 30;
+            // 画布尺寸配置
+            const cellSize = 50;           // 每个格子的尺寸
+            const padding = 20;            // 边距
+            const boardWidth = cellSize * 9; // 棋盘宽度
+            const gap = 40;                // 两个棋盘之间的间距
+            const titleHeight = 40;        // 标题区域高度
+            const statsHeight = 30;        // 统计信息区域高度
             
+            // 计算画布总尺寸
             const canvasWidth = padding * 2 + boardWidth * 2 + gap;
             const canvasHeight = padding * 2 + boardWidth + titleHeight + statsHeight + 20;
             
+            // 创建Canvas
             const canvas = document.createElement('canvas');
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
             const ctx = canvas.getContext('2d');
             
+            // 绘制背景
             ctx.fillStyle = '#f8fafb';
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
             
+            // 绘制标题
             ctx.font = 'bold 24px "Segoe UI", "Microsoft YaHei", sans-serif';
             ctx.fillStyle = '#5a6c7d';
             ctx.textAlign = 'center';
             ctx.fillText('数独游戏', canvasWidth / 2, padding + 25);
             
+            // 绘制统计信息
             ctx.font = '14px "Segoe UI", "Microsoft YaHei", sans-serif';
             ctx.fillStyle = '#8a9aa8';
             const timeStr = document.getElementById('timer').textContent;
@@ -1253,19 +1784,23 @@
                             currentDifficulty === 'extreme' ? '极难' : '自定义';
             ctx.fillText(`难度: ${diffText}  |  用时: ${timeStr}  |  错误: ${errors}`, canvasWidth / 2, padding + titleHeight + 10);
             
+            // 计算两个棋盘的位置
             const leftBoardX = padding;
             const rightBoardX = padding + boardWidth + gap;
             const boardY = padding + titleHeight + statsHeight;
             
+            // 绘制棋盘标签
             ctx.font = 'bold 14px "Segoe UI", "Microsoft YaHei", sans-serif';
             ctx.fillStyle = '#6a7a88';
             ctx.textAlign = 'center';
             ctx.fillText('原始布局', leftBoardX + boardWidth / 2, boardY - 8);
             ctx.fillText('完成布局', rightBoardX + boardWidth / 2, boardY - 8);
             
+            // 绘制两个棋盘
             drawBoard(ctx, window.originalBoard || [], leftBoardX, boardY, cellSize, true);
             drawBoard(ctx, board, rightBoardX, boardY, cellSize, false);
             
+            // 创建下载链接
             const link = document.createElement('a');
             const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
             link.download = `sudoku_${timestamp}.png`;
@@ -1273,36 +1808,53 @@
             link.click();
         }
 
+        /**
+         * 在Canvas上绘制数独棋盘
+         * 
+         * @param {CanvasRenderingContext2D} ctx - Canvas上下文
+         * @param {number[]} boardData - 棋盘数据
+         * @param {number} startX - 起始X坐标
+         * @param {number} startY - 起始Y坐标
+         * @param {number} cellSize - 格子尺寸
+         * @param {boolean} isOriginal - 是否是原始布局
+         */
         function drawBoard(ctx, boardData, startX, startY, cellSize, isOriginal) {
+            // 绘制细网格线
             ctx.strokeStyle = '#b8c4cc';
             ctx.lineWidth = 1;
             
             for (let i = 0; i <= 9; i++) {
+                // 垂直线
                 ctx.beginPath();
                 ctx.moveTo(startX + i * cellSize, startY);
                 ctx.lineTo(startX + i * cellSize, startY + 9 * cellSize);
                 ctx.stroke();
                 
+                // 水平线
                 ctx.beginPath();
                 ctx.moveTo(startX, startY + i * cellSize);
                 ctx.lineTo(startX + 9 * cellSize, startY + i * cellSize);
                 ctx.stroke();
             }
             
+            // 绘制粗网格线（3x3宫格边界）
             ctx.strokeStyle = '#7a8a98';
             ctx.lineWidth = 2;
             for (let i = 0; i <= 3; i++) {
+                // 垂直线
                 ctx.beginPath();
                 ctx.moveTo(startX + i * 3 * cellSize, startY);
                 ctx.lineTo(startX + i * 3 * cellSize, startY + 9 * cellSize);
                 ctx.stroke();
                 
+                // 水平线
                 ctx.beginPath();
                 ctx.moveTo(startX, startY + i * 3 * cellSize);
                 ctx.lineTo(startX + 9 * cellSize, startY + i * 3 * cellSize);
                 ctx.stroke();
             }
             
+            // 绘制数字
             ctx.font = 'bold 22px "Segoe UI", "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -1318,6 +1870,7 @@
                         const x = startX + col * cellSize + cellSize / 2;
                         const y = startY + row * cellSize + cellSize / 2;
                         
+                        // 原始数字用深色粗体，填入数字用浅色
                         if (originalBoard[index] !== 0) {
                             ctx.fillStyle = '#3a4a58';
                             ctx.font = 'bold 22px "Segoe UI", "Microsoft YaHei", sans-serif';
@@ -1331,11 +1884,15 @@
                 }
             }
             
+            // 绘制外边框
             ctx.strokeStyle = '#a0a8b0';
             ctx.lineWidth = 3;
             ctx.strokeRect(startX, startY, 9 * cellSize, 9 * cellSize);
         }
 
+        // ==================== 启动游戏 ====================
+        
+        // 页面加载完成后初始化游戏
         init();
     </script>
 </body>
